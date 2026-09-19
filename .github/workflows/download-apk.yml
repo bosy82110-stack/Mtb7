@@ -1,0 +1,37 @@
+name: Download Built APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  download-apk:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Download APK from EAS
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          mkdir -p artifacts
+          npx --yes eas-cli build:download \
+            --build-id 0ebc9a62-468b-4b6d-9e78-bae3ab8a0508 \
+            --non-interactive
+          find . -type f -name '*.apk' -exec cp {} artifacts/almatbakh.apk \;
+          test -s artifacts/almatbakh.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: almatbakh-apk
+          path: artifacts/almatbakh.apk
+          retention-days: 14
