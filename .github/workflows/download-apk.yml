@@ -34,7 +34,7 @@ jobs:
           npx --yes eas-cli build:download \
             --build-id 0ebc9a62-468b-4b6d-9e78-bae3ab8a0508 \
             --non-interactive
-          find . -type f -name '*.apk' -exec cp {} artifacts/almatbakh.apk \;
+          find /tmp/runner -type f -name '929b3731-bbd7-47bf-bcaa-abe69169cc06_0ebc9a62-468b-4b6d-9e78-bae3ab8a0508.apk' -exec cp {} artifacts/almatbakh.apk \;
           test -s artifacts/almatbakh.apk
 
       - name: Upload APK artifact
