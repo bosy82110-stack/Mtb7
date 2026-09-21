@@ -4,7 +4,8 @@ import type { ExpoConfig } from "expo/config";
 const bundleId = "com.app.mez";
 const config: ExpoConfig = {
   name: "ميز",
-  slug: "mez",
+  // Keep the existing EAS project slug while the installed Android app is named ميز.
+  slug: "almatbakh",
   version: "1.0.0",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
