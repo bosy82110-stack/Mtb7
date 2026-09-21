@@ -1,109 +1,58 @@
-import { useMemo } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { router } from "expo-router";
-
+import { useMemo, useState } from "react";
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { AppHeader, IconButton, MealCard, palette, SectionTitle } from "@/components/meal-ui";
-import { useColors } from "@/hooks/use-colors";
-import { MEAL_SLOTS, useMealStore, WEEK_DAYS, type DayKey } from "@/lib/meals-store";
+import { EmptyState, PersonCard, PrimaryButton, SectionTitle, StatCard, styles as ui } from "@/components/mez-ui";
+import { formatMoney, getPersonSummaries, getTotalExpenses, getTotalPayments, getWalletBalance, getWalletExpenses, useMezStore } from "@/lib/mez-store";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 
 export default function HomeScreen() {
-  const colors = useColors();
-  const { dishes, plan, userName } = useMealStore();
-  const todayIndex = (new Date().getDay() + 1) % 7;
-  const today = WEEK_DAYS[todayIndex] as DayKey;
-  const todayPlan = plan[today];
-  const todayLabel = new Intl.DateTimeFormat("ar-EG", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
+  const router = useRouter();
+  const { current, currency, createBudget, addPerson } = useMezStore();
+  const [showCreate, setShowCreate] = useState(false);
+  const [showActions, setShowActions] = useState(false);
+  const [showPerson, setShowPerson] = useState(false);
+  const [budgetName, setBudgetName] = useState("");
+  const [peopleText, setPeopleText] = useState("");
+  const [personName, setPersonName] = useState("");
+  const summaries = useMemo(() => current ? getPersonSummaries(current) : [], [current]);
+  const expenses = current ? getTotalExpenses(current) : 0;
+  const payments = current ? getTotalPayments(current) : 0;
+  const walletExpenses = current ? getWalletExpenses(current) : 0;
+  const walletBalance = current ? getWalletBalance(current) : 0;
 
-  const counts = useMemo(() => ({
-    planned: Object.values(todayPlan).filter((ids) => ids.length > 0).length,
-    total: Object.values(plan).reduce((sum, day) => sum + Object.values(day).filter((ids) => ids.length > 0).length, 0),
-  }), [plan, todayPlan]);
+  const handleCreate = () => {
+    const names = peopleText.split(",").map((name) => name.trim()).filter(Boolean);
+    if (names.length < 2) { Alert.alert("أضف شخصين على الأقل", "اكتب أسماء الأشخاص مفصولة بفاصلة."); return; }
+    createBudget(budgetName || "ميز جديد", names);
+    setBudgetName(""); setPeopleText(""); setShowCreate(false);
+  };
+  const handleAddPerson = () => { if (!personName.trim()) return; addPerson(personName); setPersonName(""); setShowPerson(false); };
 
   return (
-    <ScreenContainer className="px-5 pt-4" containerClassName="bg-background">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <AppHeader
-          title={`أهلاً ${userName}`}
-          subtitle={todayLabel}
-          right={<IconButton icon="bell" badge />}
-        />
-
-        <View style={[styles.hero, { backgroundColor: palette.terracotta }]}>
-          <View style={styles.heroCopy}>
-            <Text style={styles.heroEyebrow}>خطة اليوم</Text>
-            <Text style={styles.heroTitle}>خلّي يومك ألذ</Text>
-            <Text style={styles.heroSubtitle}>رتّب وجباتك وخلّي المطبخ أسهل</Text>
-            <Pressable onPress={() => router.push("/(tabs)/plan")} style={({ pressed }) => [styles.heroButton, pressed && { opacity: 0.8 }]}>
-              <Text style={styles.heroButtonText}>شوف الخطة</Text>
-              <Text style={styles.heroArrow}>←</Text>
-            </Pressable>
-          </View>
-          <View style={styles.heroArt}><Text style={styles.heroEmoji}>🍲</Text><Text style={styles.heroLeaves}>✦</Text></View>
-        </View>
-
-        <View style={styles.weekStrip}>
-          {WEEK_DAYS.map((day, index) => {
-            const date = new Date();
-            date.setDate(date.getDate() + index - todayIndex);
-            const active = index === todayIndex;
-            return (
-              <Pressable key={day} onPress={() => router.push("/(tabs)/plan")} style={[styles.dayItem, active && styles.dayItemActive]}>
-                <Text style={[styles.dayName, { color: active ? "#FFF" : colors.muted }]}>{day.slice(0, 3)}</Text>
-                <Text style={[styles.dayNumber, { color: active ? "#FFF" : colors.foreground }]}>{date.getDate()}</Text>
-                {plan[day].فطار.length + plan[day].غداء.length + plan[day].عشاء.length > 0 ? <View style={[styles.dayDot, { backgroundColor: active ? "#FFF" : palette.terracotta }]} /> : null}
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <View style={styles.statsRow}>
-          <View style={[styles.statCard, { backgroundColor: colors.surface }]}><Text style={styles.statEmoji}>🍴</Text><View><Text style={[styles.statValue, { color: colors.foreground }]}>{counts.planned}/3</Text><Text style={[styles.statLabel, { color: colors.muted }]}>وجبات اليوم</Text></View></View>
-          <View style={[styles.statCard, { backgroundColor: colors.surface }]}><Text style={styles.statEmoji}>📅</Text><View><Text style={[styles.statValue, { color: colors.foreground }]}>{counts.total}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>مخططة هذا الأسبوع</Text></View></View>
-        </View>
-
-        <SectionTitle title="وجبات اليوم" action="تعديل الخطة" onAction={() => router.push("/(tabs)/plan")} />
-        {MEAL_SLOTS.map((slot) => {
-          const mealDishes = todayPlan[slot].map((id) => dishes.find((dish) => dish.id === id)).filter(Boolean) as typeof dishes;
-          return <MealCard key={slot} slot={slot} dishes={mealDishes} onPress={() => router.push("/(tabs)/plan")} />;
-        })}
-
-        <Pressable onPress={() => router.push("/(tabs)/dishes")} style={({ pressed }) => [styles.quickAdd, { borderColor: colors.border }, pressed && { opacity: 0.7 }]}>
-          <View style={styles.quickAddIcon}><Text style={{ fontSize: 22 }}>＋</Text></View>
-          <View style={{ flex: 1, alignItems: "flex-end" }}><Text style={[styles.quickAddTitle, { color: colors.foreground }]}>أضف أكلة جديدة</Text><Text style={[styles.quickAddSub, { color: colors.muted }]}>احفظ وصفاتك المفضلة في مكان واحد</Text></View>
-          <Text style={{ color: palette.terracotta, fontSize: 24 }}>←</Text>
-        </Pressable>
+    <ScreenContainer className="px-5" safeAreaClassName="bg-background">
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={page.content}>
+        <View style={page.topBar}><View style={page.brand}><View style={page.logo}><Text style={page.logoText}>م</Text></View><View><Text style={page.brandName}>ميز</Text><Text style={page.brandSub}>حسابها أسهل</Text></View></View><Pressable onPress={() => router.push("/settings")} style={({ pressed }) => [ui.iconButton, pressed && ui.pressed]}><IconSymbol name="gearshape.fill" size={21} color="#2B927F" /></Pressable></View>
+        {!current ? (
+          <View style={page.welcome}><View style={page.welcomeIcon}><IconSymbol name="people" size={35} color="#2B927F" /></View><Text style={page.welcomeTitle}>ابدأ ميزك الأول</Text><Text style={page.welcomeText}>سجّل دفعات الأصحاب ومشتريات الميز، وخلي الحساب النهائي علينا.</Text><PrimaryButton title="إنشاء ميز جديد" onPress={() => setShowCreate(true)} /></View>
+        ) : (
+          <>
+            <View style={page.hero}><View style={page.heroTitleRow}><View style={page.openPill}><View style={page.dot} /><Text style={page.openText}>مفتوح</Text></View><View><Text style={page.kicker}>الميز الحالي</Text><Text style={page.title}>{current.name}</Text><Text style={page.date}>بدأ في {new Intl.DateTimeFormat("ar-SA", { day: "numeric", month: "long" }).format(new Date(current.startedAt))}</Text></View></View><View style={page.heroAmount}><Text style={page.heroLabel}>إجمالي المصروفات</Text><Text style={page.heroValue}>{formatMoney(expenses, currency)}</Text><Text style={page.heroNote}>من أصل {formatMoney(payments, currency)} دفعات</Text></View></View>
+            <View style={page.stats}><StatCard label="مصروفات" value={formatMoney(expenses, currency)} icon="receipt" tone="primary" /><StatCard label="دفعات" value={formatMoney(payments, currency)} icon="wallet" tone="success" /><StatCard label="في رصيد الميز" value={formatMoney(walletBalance, currency)} icon="insights" tone="warning" /><StatCard label="الأشخاص" value={`${current.people.length} أشخاص`} icon="people" tone="neutral" /></View>
+            <View style={page.actions}><Pressable onPress={() => setShowActions(true)} style={({ pressed }) => [page.addButton, pressed && ui.pressed]}><IconSymbol name="plus" size={21} color="#FFFFFF" /><Text style={page.addButtonText}>إضافة عملية</Text></Pressable><Pressable onPress={() => router.push("/settlement")} style={({ pressed }) => [page.settleButton, pressed && ui.pressed]}><IconSymbol name="swap" size={20} color="#2B927F" /><Text style={page.settleText}>الحساب النهائي</Text></Pressable></View>
+            <SectionTitle title="أرصدة الأشخاص" action="إضافة شخص" onPress={() => setShowPerson(true)} />
+            {summaries.length ? summaries.map((person) => <PersonCard key={person.id} person={person} currency={currency} />) : <EmptyState icon="people" title="أضف أصحاب الميز" description="أضف شخصين أو أكثر حتى يبدأ الحساب تلقائيًا." action="إضافة شخص" onPress={() => setShowPerson(true)} />}
+            <View style={page.quickInfo}><View style={page.infoIcon}><IconSymbol name="wallet" size={18} color="#C7792E" /></View><View style={page.infoBody}><Text style={page.infoTitle}>مصروفات من رصيد الميز</Text><Text style={page.infoText}>{formatMoney(walletBalance, currency)} متاح للمصروفات من دفعات الميز</Text></View><Text style={page.infoAmount}>{formatMoney(walletExpenses, currency)}</Text></View>
+          </>
+        )}
       </ScrollView>
+
+      <Modal visible={showCreate} transparent animationType="slide" onRequestClose={() => setShowCreate(false)}><View style={modal.overlay}><View style={modal.sheet}><View style={modal.handle} /><View style={modal.titleRow}><Text style={modal.title}>إنشاء ميز جديد</Text><Pressable onPress={() => setShowCreate(false)}><IconSymbol name="close" size={22} color="#718287" /></Pressable></View><Text style={modal.label}>اسم الميز</Text><TextInput value={budgetName} onChangeText={setBudgetName} placeholder="مثال: ميز الشقة" placeholderTextColor="#9AA6A5" style={modal.input} textAlign="right" /><Text style={modal.label}>أسماء الأشخاص</Text><TextInput value={peopleText} onChangeText={setPeopleText} placeholder="أحمد، محمد، علي" placeholderTextColor="#9AA6A5" style={[modal.input, { minHeight: 70 }]} textAlign="right" multiline /><Text style={modal.hint}>اكتب من 2 إلى 10 أسماء، وافصل بينها بفاصلة.</Text><PrimaryButton title="إنشاء الميز" icon="check" onPress={handleCreate} /></View></View></Modal>
+      <Modal visible={showActions} transparent animationType="fade" onRequestClose={() => setShowActions(false)}><View style={modal.overlay}><View style={modal.actionSheet}><Text style={modal.title}>ماذا تريد أن تضيف؟</Text><Pressable onPress={() => { setShowActions(false); router.push("/operations?mode=payment"); }} style={modal.actionRow}><View style={[modal.actionIcon, { backgroundColor: "#E3F3ED" }]}><IconSymbol name="wallet" size={21} color="#2B927F" /></View><View><Text style={modal.actionTitle}>إضافة دفعة</Text><Text style={modal.actionText}>مبلغ أودعه شخص في رصيد الميز</Text></View></Pressable><Pressable onPress={() => { setShowActions(false); router.push("/operations?mode=purchase"); }} style={modal.actionRow}><View style={[modal.actionIcon, { backgroundColor: "#FFF0DB" }]}><IconSymbol name="receipt" size={21} color="#C7792E" /></View><View><Text style={modal.actionTitle}>إضافة مشتريات</Text><Text style={modal.actionText}>مصروف تم دفعه للميز</Text></View></Pressable><Pressable onPress={() => setShowActions(false)} style={modal.cancel}><Text style={modal.cancelText}>إلغاء</Text></Pressable></View></View></Modal>
+      <Modal visible={showPerson} transparent animationType="slide" onRequestClose={() => setShowPerson(false)}><View style={modal.overlay}><View style={modal.sheet}><View style={modal.handle} /><View style={modal.titleRow}><Text style={modal.title}>إضافة شخص</Text><Pressable onPress={() => setShowPerson(false)}><IconSymbol name="close" size={22} color="#718287" /></Pressable></View><Text style={modal.label}>اسم الشخص</Text><TextInput value={personName} onChangeText={setPersonName} placeholder="اكتب الاسم" placeholderTextColor="#9AA6A5" style={modal.input} textAlign="right" autoFocus /><PrimaryButton title="إضافة الشخص" icon="check" onPress={handleAddPerson} /></View></View></Modal>
     </ScreenContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  scrollContent: { paddingBottom: 32 },
-  hero: { minHeight: 174, borderRadius: 26, padding: 20, flexDirection: "row-reverse", overflow: "hidden", marginBottom: 18 },
-  heroCopy: { flex: 1, alignItems: "flex-end", zIndex: 1 },
-  heroEyebrow: { color: "#FFE3D1", fontSize: 12, fontWeight: "700", marginBottom: 5 },
-  heroTitle: { color: "#FFF", fontSize: 25, fontWeight: "900", lineHeight: 34 },
-  heroSubtitle: { color: "#FFEDE4", fontSize: 12, marginTop: 4 },
-  heroButton: { flexDirection: "row-reverse", alignItems: "center", gap: 8, alignSelf: "flex-end", backgroundColor: "#FFF", borderRadius: 14, paddingHorizontal: 13, paddingVertical: 9, marginTop: 15 },
-  heroButtonText: { color: palette.terracotta, fontSize: 12, fontWeight: "800" },
-  heroArrow: { color: palette.terracotta, fontSize: 16 },
-  heroArt: { width: 104, alignItems: "center", justifyContent: "center", transform: [{ rotate: "-10deg" }] },
-  heroEmoji: { fontSize: 78 },
-  heroLeaves: { color: "#F9D6B8", fontSize: 34, position: "absolute", right: 2, top: 17 },
-  weekStrip: { flexDirection: "row-reverse", justifyContent: "space-between", marginBottom: 18 },
-  dayItem: { alignItems: "center", justifyContent: "center", width: 40, height: 62, borderRadius: 16 },
-  dayItemActive: { backgroundColor: palette.terracotta },
-  dayName: { fontSize: 10, fontWeight: "700", marginBottom: 5 },
-  dayNumber: { fontSize: 17, fontWeight: "900" },
-  dayDot: { width: 4, height: 4, borderRadius: 2, marginTop: 5 },
-  statsRow: { flexDirection: "row-reverse", gap: 10, marginBottom: 21 },
-  statCard: { flex: 1, borderRadius: 18, padding: 14, flexDirection: "row-reverse", alignItems: "center", gap: 9 },
-  statEmoji: { fontSize: 24 },
-  statValue: { fontSize: 18, fontWeight: "900", textAlign: "right" },
-  statLabel: { fontSize: 10, marginTop: 2, textAlign: "right" },
-  quickAdd: { marginTop: 6, borderWidth: 1, borderStyle: "dashed", borderRadius: 18, padding: 13, flexDirection: "row-reverse", alignItems: "center", gap: 10 },
-  quickAddIcon: { width: 42, height: 42, borderRadius: 14, backgroundColor: "#F7E7DC", alignItems: "center", justifyContent: "center" },
-  quickAddTitle: { fontSize: 14, fontWeight: "800" },
-  quickAddSub: { fontSize: 11, marginTop: 3 },
-});
+const page = StyleSheet.create({ content: { paddingTop: 8, paddingBottom: 34 }, topBar: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", marginBottom: 21 }, brand: { flexDirection: "row-reverse", alignItems: "center", gap: 10 }, logo: { width: 44, height: 44, borderRadius: 15, backgroundColor: "#17343A", alignItems: "center", justifyContent: "center" }, logoText: { color: "#B5E4D5", fontSize: 23, fontWeight: "900" }, brandName: { color: "#17343A", fontSize: 22, fontWeight: "900", textAlign: "right" }, brandSub: { color: "#718287", fontSize: 11, textAlign: "right", marginTop: 1 }, welcome: { backgroundColor: "#FFFFFF", borderRadius: 25, alignItems: "center", padding: 27, borderWidth: 1, borderColor: "#E6E1D8", marginTop: 25 }, welcomeIcon: { width: 76, height: 76, borderRadius: 27, backgroundColor: "#E3F3ED", alignItems: "center", justifyContent: "center", marginBottom: 17 }, welcomeTitle: { color: "#17343A", fontSize: 23, fontWeight: "900" }, welcomeText: { color: "#718287", textAlign: "center", lineHeight: 23, fontSize: 14, marginTop: 8, marginBottom: 22 }, hero: { backgroundColor: "#17343A", borderRadius: 25, padding: 20, marginBottom: 15 }, heroTitleRow: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-start" }, kicker: { color: "#AFC1C0", fontSize: 12, textAlign: "right" }, title: { color: "#FFFFFF", fontSize: 23, fontWeight: "900", textAlign: "right", marginTop: 3 }, date: { color: "#AFC1C0", fontSize: 11, textAlign: "right", marginTop: 5 }, openPill: { flexDirection: "row-reverse", alignItems: "center", backgroundColor: "#27554F", borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6, gap: 5 }, dot: { width: 7, height: 7, borderRadius: 4, backgroundColor: "#61C7A9" }, openText: { color: "#B5E4D5", fontWeight: "700", fontSize: 11 }, heroAmount: { borderTopWidth: 1, borderTopColor: "#2B4B51", marginTop: 20, paddingTop: 16, alignItems: "flex-end" }, heroLabel: { color: "#AFC1C0", fontSize: 12 }, heroValue: { color: "#FFFFFF", fontSize: 29, fontWeight: "900", marginTop: 3 }, heroNote: { color: "#B5E4D5", fontSize: 11, marginTop: 4 }, stats: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", marginBottom: 10 }, actions: { flexDirection: "row-reverse", gap: 10, marginBottom: 24 }, addButton: { flex: 1, minHeight: 50, borderRadius: 16, backgroundColor: "#2B927F", flexDirection: "row-reverse", gap: 8, justifyContent: "center", alignItems: "center" }, addButtonText: { color: "#FFFFFF", fontWeight: "900", fontSize: 14 }, settleButton: { flex: 1, minHeight: 50, borderRadius: 16, backgroundColor: "#E3F3ED", flexDirection: "row-reverse", gap: 7, justifyContent: "center", alignItems: "center" }, settleText: { color: "#2B927F", fontWeight: "900", fontSize: 13 }, quickInfo: { borderRadius: 18, padding: 13, backgroundColor: "#FFF8EC", marginTop: 16, flexDirection: "row-reverse", alignItems: "center", borderWidth: 1, borderColor: "#F4E5C9" }, infoIcon: { width: 35, height: 35, borderRadius: 12, backgroundColor: "#FFEBCB", alignItems: "center", justifyContent: "center", marginLeft: 10 }, infoBody: { flex: 1, alignItems: "flex-end" }, infoTitle: { color: "#7F5425", fontSize: 13, fontWeight: "800" }, infoText: { color: "#9A7A4C", fontSize: 11, marginTop: 3, textAlign: "right" }, infoAmount: { color: "#C7792E", fontWeight: "900", fontSize: 13 } });
+const modal = StyleSheet.create({ overlay: { flex: 1, backgroundColor: "rgba(13,33,39,0.42)", justifyContent: "flex-end" }, sheet: { backgroundColor: "#F8F5EF", borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 22, paddingBottom: 30 }, actionSheet: { backgroundColor: "#F8F5EF", borderRadius: 25, padding: 22, margin: 18 }, handle: { width: 42, height: 4, borderRadius: 4, backgroundColor: "#D5D2CA", alignSelf: "center", marginBottom: 18 }, titleRow: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }, title: { color: "#17343A", fontSize: 20, fontWeight: "900", textAlign: "right" }, label: { color: "#17343A", fontWeight: "800", fontSize: 13, textAlign: "right", marginBottom: 7, marginTop: 8 }, input: { backgroundColor: "#FFFFFF", borderRadius: 14, borderWidth: 1, borderColor: "#E6E1D8", minHeight: 48, paddingHorizontal: 14, color: "#17343A", fontSize: 15, marginBottom: 4 }, hint: { color: "#718287", fontSize: 11, textAlign: "right", marginBottom: 16 }, actionRow: { flexDirection: "row-reverse", alignItems: "center", gap: 12, paddingVertical: 13, borderBottomWidth: 1, borderBottomColor: "#E6E1D8" }, actionIcon: { width: 44, height: 44, borderRadius: 15, alignItems: "center", justifyContent: "center" }, actionTitle: { color: "#17343A", fontWeight: "900", textAlign: "right", fontSize: 15 }, actionText: { color: "#718287", fontSize: 11, marginTop: 4, textAlign: "right" }, cancel: { marginTop: 17, alignItems: "center", padding: 10 }, cancelText: { color: "#C85B58", fontWeight: "800" } });

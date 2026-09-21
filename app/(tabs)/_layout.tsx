@@ -10,30 +10,16 @@ export default function TabLayout() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const bottomPadding = Platform.OS === "web" ? 10 : Math.max(insets.bottom, 8);
-
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.muted,
-        tabBarButton: HapticTab,
-        tabBarStyle: {
-          height: 68 + bottomPadding,
-          paddingTop: 8,
-          paddingBottom: bottomPadding,
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-          borderTopWidth: 1,
-        },
-        tabBarLabelStyle: { fontFamily: "System", fontSize: 11, fontWeight: "600" },
-      }}
-    >
-      <Tabs.Screen name="index" options={{ title: "الرئيسية", tabBarIcon: ({ color }) => <IconSymbol name="house.fill" size={24} color={color} /> }} />
-      <Tabs.Screen name="dishes" options={{ title: "أكلاتي", tabBarIcon: ({ color }) => <IconSymbol name="fork.knife" size={24} color={color} /> }} />
-      <Tabs.Screen name="plan" options={{ title: "الخطة", tabBarIcon: ({ color }) => <IconSymbol name="calendar" size={24} color={color} /> }} />
-      <Tabs.Screen name="favorites" options={{ title: "المفضلة", tabBarIcon: ({ color }) => <IconSymbol name="star.fill" size={24} color={color} /> }} />
-      <Tabs.Screen name="settings" options={{ title: "الإعدادات", tabBarIcon: ({ color }) => <IconSymbol name="gearshape.fill" size={24} color={color} /> }} />
+    <Tabs screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.primary, tabBarInactiveTintColor: colors.muted, tabBarButton: HapticTab, tabBarStyle: { height: 68 + bottomPadding, paddingTop: 8, paddingBottom: bottomPadding, backgroundColor: colors.surface, borderTopColor: colors.border, borderTopWidth: 1 }, tabBarLabelStyle: { fontSize: 10, fontWeight: "700" } }}>
+      <Tabs.Screen name="index" options={{ title: "الرئيسية", tabBarIcon: ({ color }) => <IconSymbol name="house.fill" size={23} color={color} /> }} />
+      <Tabs.Screen name="operations" options={{ title: "العمليات", tabBarIcon: ({ color }) => <IconSymbol name="receipt" size={23} color={color} /> }} />
+      <Tabs.Screen name="settlement" options={{ title: "التسوية", tabBarIcon: ({ color }) => <IconSymbol name="swap" size={23} color={color} /> }} />
+      <Tabs.Screen name="history" options={{ title: "السجل", tabBarIcon: ({ color }) => <IconSymbol name="history" size={23} color={color} /> }} />
+      <Tabs.Screen name="settings" options={{ title: "الإعدادات", tabBarIcon: ({ color }) => <IconSymbol name="gearshape.fill" size={23} color={color} /> }} />
+      <Tabs.Screen name="dishes" options={{ href: null }} />
+      <Tabs.Screen name="plan" options={{ href: null }} />
+      <Tabs.Screen name="favorites" options={{ href: null }} />
     </Tabs>
   );
 }

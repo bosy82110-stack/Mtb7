@@ -1,74 +1,20 @@
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-
+import { useState } from "react";
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
-import { AppHeader, IconButton, palette } from "@/components/meal-ui";
-import { IconSymbol } from "@/components/ui/icon-symbol";
-import { useColors } from "@/hooks/use-colors";
-import { useMealStore } from "@/lib/meals-store";
+import { Header } from "@/components/mez-ui";
+import { useMezStore } from "@/lib/mez-store";
 import { useThemeContext } from "@/lib/theme-provider";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 
 export default function SettingsScreen() {
-  const colors = useColors();
-  const { userName, isDark, notifications, setUserName, setIsDark, setNotifications } = useMealStore();
+  const router = useRouter();
+  const { currency, setCurrency, isDark, setIsDark, notifications, setNotifications } = useMezStore();
   const { setColorScheme } = useThemeContext();
-  const [name, setName] = useState(userName);
-
-  useEffect(() => { setColorScheme(isDark ? "dark" : "light"); }, [isDark, setColorScheme]);
-
+  const [showCurrency, setShowCurrency] = useState(false);
+  const currencies = ["ر.س", "ج.م", "د.إ", "$", "€"];
   const toggleDark = (value: boolean) => { setIsDark(value); setColorScheme(value ? "dark" : "light"); };
-  const saveName = () => { if (name.trim()) setUserName(name.trim()); };
-
-  return (
-    <ScreenContainer className="px-5 pt-4" containerClassName="bg-background">
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
-        <AppHeader title="الإعدادات" subtitle="خصّص تجربتك في المطبخ" right={<IconButton icon="gearshape.fill" />} />
-        <View style={styles.profileHero}><View style={styles.avatar}><Text style={styles.avatarText}>{(userName || "أ").slice(0, 1)}</Text></View><View style={styles.profileCopy}><Text style={styles.profileEyebrow}>مرحبًا بك في</Text><Text style={styles.profileName}>{userName}</Text><Text style={styles.profileSub}>خلّي كل وجبة على مزاجك</Text></View></View>
-
-        <Text style={[styles.groupTitle, { color: colors.muted }]}>الحساب</Text>
-        <View style={[styles.group, { backgroundColor: colors.surface }]}><View style={styles.settingRow}><View style={styles.rowIcon}><IconSymbol name="person" size={20} color={palette.terracotta} /></View><View style={styles.settingCopy}><Text style={[styles.settingTitle, { color: colors.foreground }]}>اسم المستخدم</Text><Text style={[styles.settingHint, { color: colors.muted }]}>يظهر في الصفحة الرئيسية</Text></View></View><View style={styles.nameEdit}><TextInput value={name} onChangeText={setName} onBlur={saveName} onSubmitEditing={saveName} returnKeyType="done" style={[styles.nameInput, { color: colors.foreground, borderColor: colors.border }]} textAlign="right"/><Pressable onPress={saveName} style={styles.nameSave}><Text style={styles.nameSaveText}>حفظ</Text></Pressable></View></View>
-
-        <Text style={[styles.groupTitle, { color: colors.muted }]}>التفضيلات</Text>
-        <View style={[styles.group, { backgroundColor: colors.surface }]}>
-          <SettingToggle icon="moon" title="الوضع الليلي" hint="راحة أكثر للعين في المساء" value={isDark} onChange={toggleDark} colors={colors} />
-          <View style={[styles.divider, { backgroundColor: colors.border }]} />
-          <SettingToggle icon="notifications" title="الإشعارات" hint="تذكيرات الوجبات والخطة" value={notifications} onChange={setNotifications} colors={colors} />
-        </View>
-
-        <Text style={[styles.groupTitle, { color: colors.muted }]}>عن التطبيق</Text>
-        <View style={[styles.group, { backgroundColor: colors.surface }]}><View style={styles.infoRow}><Text style={[styles.infoText, { color: colors.muted }]}>الإصدار 1.0.0</Text><Text style={[styles.settingTitle, { color: colors.foreground }]}>المطبخ</Text></View><View style={[styles.divider, { backgroundColor: colors.border }]} /><View style={styles.infoRow}><Text style={[styles.infoText, { color: colors.muted }]}>تنظيم الأكلات وتخطيط الوجبات</Text><Text style={[styles.settingTitle, { color: colors.foreground }]}>عن التطبيق</Text></View></View>
-        <Text style={[styles.footerText, { color: colors.muted }]}>صُمّم بحب لعشاق الأكل المنظّم 🍲</Text>
-      </ScrollView>
-    </ScreenContainer>
-  );
+  return <ScreenContainer className="px-5"><ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={screen.content}><Header title="الإعدادات" subtitle="خلّي ميز على طريقتك" onBack={() => router.back()} /><View style={screen.profile}><View style={screen.profileIcon}><Text style={screen.profileLetter}>م</Text></View><View style={screen.profileBody}><Text style={screen.profileTitle}>تطبيق ميز</Text><Text style={screen.profileSub}>بياناتك محفوظة محليًا على جهازك</Text></View><IconSymbol name="lock" size={19} color="#2B927F" /></View><Text style={screen.groupTitle}>التفضيلات</Text><View style={screen.card}><Pressable onPress={() => setShowCurrency(true)} style={screen.row}><View style={screen.rowValue}><Text style={screen.value}>{currency}</Text><IconSymbol name="chevron.left" size={18} color="#9AA6A5" /></View><View style={screen.rowLabel}><View style={[screen.rowIcon, { backgroundColor: "#E3F3ED" }]}><Text style={screen.currencySymbol}>ر</Text></View><Text style={screen.label}>العملة الافتراضية</Text></View></Pressable><View style={screen.divider} /><View style={screen.row}><View style={screen.rowValue}><Switch value={isDark} onValueChange={toggleDark} trackColor={{ false: "#DCE2E0", true: "#A7D9C9" }} thumbColor={isDark ? "#2B927F" : "#FFFFFF"} /></View><View style={screen.rowLabel}><View style={[screen.rowIcon, { backgroundColor: "#EEF1F0" }]}><IconSymbol name="moon" size={18} color="#647579" /></View><Text style={screen.label}>الوضع الليلي</Text></View></View><View style={screen.divider} /><View style={screen.row}><View style={screen.rowValue}><Switch value={notifications} onValueChange={setNotifications} trackColor={{ false: "#DCE2E0", true: "#A7D9C9" }} thumbColor={notifications ? "#2B927F" : "#FFFFFF"} /></View><View style={screen.rowLabel}><View style={[screen.rowIcon, { backgroundColor: "#FFF0DB" }]}><IconSymbol name="notifications" size={18} color="#C7792E" /></View><Text style={screen.label}>التنبيهات</Text></View></View></View><Text style={screen.groupTitle}>البيانات</Text><View style={screen.card}><Pressable onPress={() => Alert.alert("قريبًا", "سيتم توفير النسخ الاحتياطي والاستعادة في تحديث قادم.")} style={screen.row}><View style={screen.rowValue}><IconSymbol name="chevron.left" size={18} color="#9AA6A5" /></View><View style={screen.rowLabel}><View style={[screen.rowIcon, { backgroundColor: "#E3F3ED" }]}><IconSymbol name="restart" size={18} color="#2B927F" /></View><Text style={screen.label}>النسخ الاحتياطي والاستعادة</Text></View></Pressable><View style={screen.divider} /><Pressable onPress={() => Alert.alert("عن ميز", "ميز — أسهل طريقة لحساب مصاريف الميز وتسوية الحساب بين الأصحاب.\n\nالإصدار 1.0.0")} style={screen.row}><View style={screen.rowValue}><IconSymbol name="chevron.left" size={18} color="#9AA6A5" /></View><View style={screen.rowLabel}><View style={[screen.rowIcon, { backgroundColor: "#EEF1F0" }]}><IconSymbol name="insights" size={18} color="#647579" /></View><Text style={screen.label}>عن التطبيق</Text></View></Pressable></View><View style={screen.note}><IconSymbol name="lock" size={16} color="#2B927F" /><Text style={screen.noteText}>يعمل ميز دون إنترنت، وتبقى بياناتك على جهازك.</Text></View></ScrollView><Modal visible={showCurrency} transparent animationType="fade" onRequestClose={() => setShowCurrency(false)}><View style={modal.overlay}><View style={modal.box}><Text style={modal.title}>اختر العملة</Text>{currencies.map((item) => <Pressable key={item} onPress={() => { setCurrency(item); setShowCurrency(false); }} style={[modal.option, item === currency && modal.selected]}><Text style={[modal.optionText, item === currency && modal.selectedText]}>{item}</Text>{item === currency ? <IconSymbol name="check" size={18} color="#2B927F" /> : null}</Pressable>)}<Pressable onPress={() => setShowCurrency(false)} style={modal.cancel}><Text style={modal.cancelText}>إلغاء</Text></Pressable></View></View></Modal></ScreenContainer>;
 }
-
-function SettingToggle({ icon, title, hint, value, onChange, colors }: { icon: "moon" | "notifications"; title: string; hint: string; value: boolean; onChange: (value: boolean) => void; colors: ReturnType<typeof useColors> }) {
-  return <View style={styles.settingRow}><View style={styles.rowIcon}><IconSymbol name={icon} size={20} color={palette.terracotta} /></View><View style={styles.settingCopy}><Text style={[styles.settingTitle, { color: colors.foreground }]}>{title}</Text><Text style={[styles.settingHint, { color: colors.muted }]}>{hint}</Text></View><Switch value={value} onValueChange={onChange} trackColor={{ false: "#D6CDC5", true: "#E8A18A" }} thumbColor={value ? palette.terracotta : "#FFF"} /></View>;
-}
-
-const styles = StyleSheet.create({
-  content: { paddingBottom: 32 },
-  profileHero: { flexDirection: "row-reverse", alignItems: "center", padding: 18, borderRadius: 22, backgroundColor: palette.terracotta, marginBottom: 23 },
-  avatar: { width: 62, height: 62, borderRadius: 22, backgroundColor: "#F9D7C4", alignItems: "center", justifyContent: "center", marginLeft: 14 },
-  avatarText: { color: palette.terracotta, fontSize: 27, fontWeight: "900" },
-  profileCopy: { flex: 1, alignItems: "flex-end" },
-  profileEyebrow: { color: "#FFE9DE", fontSize: 12 },
-  profileName: { color: "#FFF", fontSize: 22, fontWeight: "900", marginTop: 2 },
-  profileSub: { color: "#FFE9DE", fontSize: 11, marginTop: 2 },
-  groupTitle: { textAlign: "right", fontSize: 12, fontWeight: "800", marginBottom: 8, marginRight: 3 },
-  group: { borderRadius: 19, padding: 15, marginBottom: 19 },
-  settingRow: { flexDirection: "row-reverse", alignItems: "center", minHeight: 48 },
-  rowIcon: { width: 37, height: 37, borderRadius: 12, backgroundColor: "#F8E7DD", alignItems: "center", justifyContent: "center", marginLeft: 11 },
-  settingCopy: { flex: 1, alignItems: "flex-end" },
-  settingTitle: { fontSize: 14, fontWeight: "800" },
-  settingHint: { fontSize: 11, marginTop: 3 },
-  divider: { height: 1, marginVertical: 13 },
-  nameEdit: { flexDirection: "row-reverse", gap: 8, alignItems: "center", marginTop: 12 },
-  nameInput: { flex: 1, height: 42, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, fontSize: 13 },
-  nameSave: { height: 42, paddingHorizontal: 15, borderRadius: 12, backgroundColor: palette.terracotta, alignItems: "center", justifyContent: "center" },
-  nameSaveText: { color: "#FFF", fontSize: 12, fontWeight: "800" },
-  infoRow: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", minHeight: 35 },
-  infoText: { fontSize: 11 },
-  footerText: { textAlign: "center", fontSize: 11, marginTop: 4 },
-});
+const screen = StyleSheet.create({ content: { paddingTop: 8, paddingBottom: 35 }, profile: { flexDirection: "row-reverse", alignItems: "center", backgroundColor: "#17343A", borderRadius: 21, padding: 16, marginBottom: 25 }, profileIcon: { width: 48, height: 48, borderRadius: 17, backgroundColor: "#2B927F", alignItems: "center", justifyContent: "center", marginLeft: 11 }, profileLetter: { color: "#FFFFFF", fontSize: 24, fontWeight: "900" }, profileBody: { flex: 1, alignItems: "flex-end" }, profileTitle: { color: "#FFFFFF", fontSize: 16, fontWeight: "900" }, profileSub: { color: "#AFC1C0", fontSize: 11, marginTop: 4, textAlign: "right" }, groupTitle: { color: "#718287", fontSize: 12, fontWeight: "800", textAlign: "right", marginBottom: 8, marginRight: 4 }, card: { backgroundColor: "#FFFFFF", borderRadius: 19, borderWidth: 1, borderColor: "#E6E1D8", paddingHorizontal: 15, marginBottom: 23 }, row: { minHeight: 66, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" }, rowLabel: { flexDirection: "row-reverse", alignItems: "center", gap: 10 }, rowValue: { flexDirection: "row", alignItems: "center", gap: 7 }, rowIcon: { width: 34, height: 34, borderRadius: 12, alignItems: "center", justifyContent: "center" }, currencySymbol: { color: "#2B927F", fontSize: 17, fontWeight: "900" }, label: { color: "#17343A", fontSize: 14, fontWeight: "700" }, value: { color: "#2B927F", fontSize: 13, fontWeight: "900" }, divider: { height: 1, backgroundColor: "#F0EDE7" }, note: { flexDirection: "row-reverse", justifyContent: "center", alignItems: "center", gap: 7, paddingTop: 3 }, noteText: { color: "#718287", fontSize: 11 } });
+const modal = StyleSheet.create({ overlay: { flex: 1, backgroundColor: "rgba(13,33,39,0.42)", justifyContent: "center", padding: 22 }, box: { backgroundColor: "#F8F5EF", borderRadius: 23, padding: 20 }, title: { color: "#17343A", fontWeight: "900", fontSize: 19, textAlign: "right", marginBottom: 13 }, option: { minHeight: 48, borderRadius: 13, paddingHorizontal: 13, flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }, selected: { backgroundColor: "#E3F3ED" }, optionText: { color: "#718287", fontWeight: "800", fontSize: 14 }, selectedText: { color: "#2B927F" }, cancel: { alignItems: "center", padding: 12, marginTop: 6 }, cancelText: { color: "#C85B58", fontWeight: "800" } });

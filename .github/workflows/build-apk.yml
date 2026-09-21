@@ -1,4 +1,4 @@
-name: Build Android APK
+name: Build Mez Android APK
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-apk:
-    name: Build preview APK with EAS
+    name: Build Mez preview APK with EAS
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -26,12 +26,26 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check Expo authentication
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx --yes eas-cli whoami
+      - name: Check project
+        run: pnpm check
 
-      - name: Build APK
+      - name: Build APK with EAS
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        run: npx --yes eas-cli build --platform android --profile preview --non-interactive --wait
+        run: npx --yes eas-cli build --platform android --profile preview --non-interactive --wait --json > eas-build.json
+
+      - name: Download APK artifact
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          URL=$(node -e 'const fs=require("fs"); const data=JSON.parse(fs.readFileSync("eas-build.json","utf8")); const b=Array.isArray(data)?data[0]:data; console.log(b?.artifacts?.buildUrl || b?.artifacts?.applicationArchive || b?.artifactUrl || "")')
+          test -n "$URL"
+          curl -L --fail --show-error "$URL" -o mez.apk
+          test -s mez.apk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mez-apk
+          path: mez.apk
+          retention-days: 30
