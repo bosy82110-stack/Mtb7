@@ -27,6 +27,6 @@ const config: ExpoConfig = {
     ["expo-build-properties", { android: { buildArchs: ["armeabi-v7a", "arm64-v8a"], minSdkVersion: 24 } }],
   ],
   extra: { eas: { projectId: "929b3731-bbd7-47bf-bcaa-abe69169cc06" } },
-  experiments: { typedRoutes: true, reactCompiler: true },
+  experiments: { reactCompiler: true },
 };
 export default config;
