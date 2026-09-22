@@ -15,7 +15,9 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useSystemColorScheme() ?? "light";
   const { isDark } = useMezStore();
-  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(isDark ? "dark" : systemScheme);
+  // The app preference wins over the device setting so light mode never inherits
+  // a dark system palette that makes text and surfaces lose contrast.
+  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(isDark ? "dark" : "light");
 
   const applyScheme = useCallback((scheme: ColorScheme) => {
     nativewindColorScheme.set(scheme);

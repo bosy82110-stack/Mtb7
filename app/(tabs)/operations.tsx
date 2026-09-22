@@ -36,7 +36,9 @@ export default function OperationsScreen() {
     if (mode === "payment") addPayment({ personId, amount: value, note });
     else if (!name.trim()) { Alert.alert("اكتب اسم المشتريات", "مثل: مشتريات الأسبوع أو فاتورة المطعم."); return; }
     else addPurchase({ name: name.trim(), category, amount: value, paidById: personId, paidFrom, note });
-    resetForm(); setShowForm(false);
+    // Keep the selected person and the form open so repeated payments can be
+    // entered quickly without reopening the flow each time.
+    setAmount(""); setName(""); setNote("");
   };
   const remove = (item: (typeof operations)[number]) => Alert.alert("حذف العملية؟", "سيتم حذفها من الحساب النهائي.", [{ text: "إلغاء", style: "cancel" }, { text: "حذف", style: "destructive", onPress: () => item.type === "payment" ? deletePayment(item.id) : deletePurchase(item.id) }]);
 
